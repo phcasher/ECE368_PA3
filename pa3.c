@@ -26,14 +26,15 @@ TreeNode* buildTreeFromPostOrder(FILE *input) {
     char buffer[20];
     if (!fgets(buffer,sizeof(buffer), input)) return NULL;
     if (buffer[0] == 'H' || buffer [0] == 'V') {
-        TreeNode* node = createNode(buffer[0], 0, 0);
+        TreeNode* node = createNode(buffer[0], 0, 0, 0);
         node->right = buildTreeFromPostOrder(input);
         node->left = buildTreeFromPostOrder(input);
         return node;
     } else {
+        char type;
         int label, width, height;
         sscanf(buffer, "%d(%d,%d)", &label, &width, &height);
-        return createNode(label, width, height);
+        return createNode(type, label, width, height);
     }
 }
 
@@ -91,10 +92,10 @@ void computeSmallestRectangle(TreeNode *root, FILE *output) {
 
 // The main function
 int main(int argc, char *argv[]) {
-    if (argc != 6) {
-        fprintf("");
+    /*if (argc != 6) {
+        perror("arguments incorrect"); // This part is being returned for all test cases.
         return EXIT_FAILURE;
-    }
+    }*/
 
     FILE *input = fopen(argv[1], "r");
     if (!input) {
@@ -110,6 +111,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // These following outputs are not printing the correct thing at all. Investigate further what each output should be.
+
     FILE *out1 = fopen(argv[2], "w");
     TreeNode *root1 = reRootTreeLeft(root);
     preOrderTraversal(root1, out1);
@@ -121,14 +124,14 @@ int main(int argc, char *argv[]) {
     fclose(out2);
 
     FILE *out3 = fopen(argv[4], "w");
-    TreeNode *root1 = reRootTreeLeft(root);
+    TreeNode *root3 = reRootTreeLeft(root);
     computeSmallestRectangle(root, out3);
     fclose(out3);
 
-    FILE *out4 = fopen(argv[5], "w");
-    TreeNode *root1 = reRootTreeLeft(root);
-    preOrderTraversal(root, out4); // This is a placeholder for optimal re-rooting
-    fclose(out4);
+    // FILE *out4 = fopen(argv[5], "w"); // *The code is currently having an issue here with argv[5]. Investigate what this means*
+    // TreeNode *root4 = reRootTreeLeft(root);
+    // preOrderTraversal(root, out4); // This is a placeholder for optimal re-rooting
+    // fclose(out4);
 
     // Free memory
     free(root);
