@@ -9,19 +9,19 @@ OBJS = $(SRCS:%.c=%.o)
 	$(GCC) -c $< -o $@
 
 test1:
-	./pa3 3.po out_file1 out_file2 out_file3
+	./pa3 3.po out_file1 out_file2 out_file3 out_file4
 
 test2:
-	./pa3 8.po out_file1 out_file2 out_file3
+	./pa3 8.po out_file1 out_file2 out_file3 out_file4
 
 test3:
-	./pa3 100.po out_file1 out_file2 out_file3
+	./pa3 100.po out_file1 out_file2 out_file3 out_file4
 
 test4:
-	./pa3 500.po out_file1 out_file2 out_file3
+	./pa3 500.po out_file1 out_file2 out_file3 out_file4
 
 test5:
-	./pa3 1K.po out_file1 out_file2 out_file3
+	./pa3 1K.po out_file1 out_file2 out_file3 out_file4
 
 clean:
 	rm -f pa3 out_file1 out_file2 out_file3 *.o output?
