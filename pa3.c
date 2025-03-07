@@ -5,6 +5,21 @@
  * The argv[5] file is causing errors
 */
 
+/* Notes from TA help:
+When we do a LL, for instance, we are preserving that connection between those two nodes (you follow left, then left, from the root node, and those are your two).
+
+Looking to eventually make a tree where, for example, the root node (the top one) leads to a leaf node on the left, and then a branch node on the right.
+Then, that branch node leads to a leaf node on the left, and then a branch node on the right. Etc.
+
+Opposites:
+LL -> RR
+LR -> LR (yes this isn't a typo)
+RL -> RL
+RR -> LL
+
+We need to go back using the opposites. (In order to make comparisons I think he said?)
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -302,7 +317,7 @@ int main(int argc, char *argv[]) {
     FILE *output4 = fopen(argv[5], "w"); // CURRENTLY CAUSING EXIT_FAILURE
 
     // Note: this line will need to include " || !output4"
-    if (!output1 || !output2 || !output3) { // This checks if any of the output files have failed to open
+    if (!output1 || !output2 || !output3 || !output4) { // This checks if any of the output files have failed to open
         perror("Error opening output files");
         return EXIT_FAILURE; // If any output file cannot be opened, then exit with failure
     }

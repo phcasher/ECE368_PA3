@@ -24,4 +24,4 @@ test5:
 	./pa3 1K.po out_file1 out_file2 out_file3 out_file4
 
 clean:
-	rm -f pa3 out_file1 out_file2 out_file3 *.o output?
+	rm -f pa3 out_file1 out_file2 out_file3 out_file4 *.o output?
