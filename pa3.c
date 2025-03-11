@@ -1,10 +1,3 @@
-/*
- * What is not currently working:
- * The preOrder function
- * The reroot (left and right) functions
- * The argv[5] file is causing errors
-*/
-
 /* Notes from TA help:
 When we do a LL, for instance, we are preserving that connection between those two nodes (you follow left, then left, from the root node, and those are your two).
 
@@ -31,6 +24,8 @@ typedef struct TreeNode {
     int width, height; // Dimensions for rectangle nodes
     struct TreeNode *left, *right;
 } TreeNode;
+
+TreeNode* reRootRight(TreeNode *root);
 
 // This function creates a new node
 TreeNode* createNode(char type, int label, int width, int height) {
@@ -104,12 +99,6 @@ void preOrderTraversal(TreeNode *root, FILE *output) {
         return;
     }
 
-    /*if (root->type == 'H' || root->type == 'V') { // This checks if the node is an internal node (cutline node 'H' or 'V')
-        fprintf(output, "%c\n", root->type); // This prints the type of the internal node (either 'H' or 'V') to the output file
-    } else { // Otherwise, it is a leaf node (a rectangle with width and height)
-        fprintf(output, "%c(%d,%d)\n", root->label, root->width, root->height); // This prints the rectangle's type, width, and height in the format 'C(W,H)'
-    }*/
-
     if (root->type == 'B') { // If the current node is a leaf node (block 'B'), then print its label, width, and height.
         fprintf(output, "%d(%d,%d)\n", root->label, root->width, root->height);
     } else { // Else, then this means that the current node is an internal node ('H' or 'V'), so print its type.
@@ -151,134 +140,256 @@ void freeTree(TreeNode *root) {
 
 /* These are the new rerooting functions */
 TreeNode* findLeftmost(TreeNode *node) {
-    if (!node || (!node->left && !node->right)) {
+    if (!node || (!node->left && !node->right)) { // If the node is either NULL or a leaf node, then return the node itself.
         return node;
     }
 
-    // return node->left ? findLeftmost(node->left) : findLeftmost(node->right);
-    if (node->left) {
+    if (node->left) { // If the left child exists, then continue searching down the left subtree.
         return findLeftmost(node->left);
-    } else {
+    } else { // Otherwise, seach down the right subtree instead.
         return findLeftmost(node->right);
     }
 }
 
 TreeNode* findRightmost(TreeNode *node) {
-    if (!node || (!node->left && !node->right)) {
+    if (!node || (!node->left && !node->right)) {// If the node is either NULL or a leaf node, then return the node itself.
         return node;
     }
 
-    // return node->right ? findRightmost(node->right) : findRightmost(node->left);
-    if (node->right) {
+    if (node->right) { // If the right child exists, then continue searching down the right subtree.
         return findRightmost(node->right);
-    } else {
+    } else { // Otherwise, seach down the left subtree instead.
         return findRightmost(node->left);
     }
 }
 
 TreeNode* reRootLeft(TreeNode *root) {
-    if (!root) {
+    if (!root) { // If the tree is empty, then return NULL.
         return NULL;
     }
 
-    TreeNode *newRoot = findLeftmost(root);
-    if (newRoot == root) {
-        return root;
-    }
-
-    TreeNode *parent = NULL, *curr = root;
-    while (curr->left != newRoot && curr->right != newRoot) {
-        parent = curr;
-
-        // curr = curr->left ? curr->left : curr->right;
-        if (curr->left) {
-            curr = curr->left;
-        } else {
-            curr = curr->right;
+    TreeNode *curr = root, *child = root->left;
+    if (child != NULL && child->type != 'B') {
+        // Re-root the parent and child nodes
+        root->left = child->left;
+        child->left = root;
+        if (child->right->type == 'H' || child->right->type == 'V') { // If the right node is not a leaf node, then return the root.
+            return reRootRight(child);
         }
     }
 
-    if (parent) {
-        if (parent->left == newRoot) {
-            parent->left = NULL;
-        } else {
-            parent->right = NULL;
-        }
-    }
-
-    newRoot->left = root;
-    return newRoot;
+    return root;
 }
 
 TreeNode* reRootRight(TreeNode *root) {
-    if (!root) {
+    if (!root) { // If the tree is empty, then return NULL.
         return NULL;
     }
 
-    TreeNode *newRoot = findRightmost(root);
-    if (newRoot == root) {
-        return root;
-    }
+    TreeNode *curr = root, *child = root->right;
+    if (child != NULL && child->type != 'B') {
+        // Re-root the parent and child nodes
+        root->right = child->right;
+        child->right = root;
 
-    TreeNode *parent = NULL, *curr = root;
-    while (curr->left != newRoot && curr->right != newRoot) {
-        parent = curr;
-
-        // curr = curr->right ? curr->right : curr->left;
-        if (curr->right) {
-            curr = curr->right;
-        } else {
-            curr = curr->left;
+        if (child->left->type == 'H' || child->left->type == 'V') { // If the left node is not a leaf node, then return the root.
+            return reRootLeft(child);
         }
     }
-
-    if (parent) {
-        if (parent->right == newRoot) {
-            parent->right = NULL;
-        } else {
-            parent->left = NULL;
-        }
-    }
-
-    newRoot->right = root;
-    return newRoot;
+    return root;
 }
 
 TreeNode* reRootOptimal(TreeNode *root) {
-    if (!root) return NULL;
-    if (!root->left && !root->right) return root;
+    if (!root) { // If the tree is empty, then return NULL.
+        return NULL;
+    }
 
-    TreeNode *newRoot = root;
-    int leftHeight = 0, rightHeight = 0;
-    TreeNode *leftmost = findLeftmost(root);
-    TreeNode *rightmost = findRightmost(root);
+    if (!root->left && !root->right) { // If the tree only has one node, return it as the root.
+        return root;
+    }
 
-    for (TreeNode *curr = leftmost; curr; curr = curr->left) leftHeight++;
-    for (TreeNode *curr = rightmost; curr; curr = curr->right) rightHeight++;
+    TreeNode *newRoot = root; // This initializes newRoot as the current root.
+    int leftHeight = 0, rightHeight = 0; // Variables to track the height of the leftmost and rightmost paths.
 
-    if (leftHeight > rightHeight) newRoot = leftmost;
-    else newRoot = rightmost;
+    TreeNode *leftmost = findLeftmost(root); // Find the leftmost (the deepest left) node.
+    TreeNode *rightmost = findRightmost(root); // Find the rightmost (the deepest right) node.
 
-    return newRoot == root ? root : (leftHeight > rightHeight ? reRootLeft(root) : reRootRight(root));
+    // This calculates the height of the leftmost path by following left child pointers.
+    for (TreeNode *curr = leftmost; curr; curr = curr->left) {
+        leftHeight++;
+    }
+
+    // This calculates the height of the rightmost path by following right child pointers.
+    for (TreeNode *curr = rightmost; curr; curr = curr->right) {
+        rightHeight++;
+    }
+
+    // This determines which node should become the new root based on which one has the greater height.
+    if (leftHeight > rightHeight) {
+        newRoot = leftmost;
+    } else {
+        newRoot = rightmost;
+    }
+
+    // If the selected new root is already the current root, then return it.
+    // Otherwise, then call either reRootLeft or reRootRight to perform the actual re-rooting.
+    if (newRoot == root) {
+        return root;
+    } else {
+        if (leftHeight > rightHeight) {
+            return reRootLeft(root);
+        } else {
+            return reRootRight(root);
+        }
+    }
+    // return newRoot == root ? root : (leftHeight > rightHeight ? reRootLeft(root) : reRootRight(root));
 }
 
 // This function outputs the packing dimensions
 void outputDimensions(TreeNode* root, FILE *fp) {
-    // This function prints the dimensions (the width and height) of the root node, which represents the entire packed layout.
-    // This function takes a pointer to the root TreeNode as input.
-
-    if (!root) { // If the root is NULL, then there is nothing to print, so return.
+    if (!root) { // Base case: If the root is NULL, then there is nothing to print, so return.
         return;
     }
 
+    static int isFirstCall = 1; // Track if this is the first call (root node)
+
+    if (isFirstCall) {
+        isFirstCall = 0;
+        // Root node must be printed differently:
+        if (root->type == 'B') {
+            fprintf(fp, "%d\n", root->label); // Leaf node only print label.
+        } else {
+            fprintf(fp, "%c\n", root->type); // Internal node prints only 'V' or 'H'.
+        }
+    }
+
+    // Special case - Left child: If it is the immediate left child of the root, then print without dimensions.
+    if (root->left) {
+        //if (root->left->parent == root && root == root->parent) {
+            if (root->left->type == 'B') {
+                fprintf(fp, "%d\n", root->left->label);
+            } else {
+                fprintf(fp, "%c\n", root->left->type);
+            }
+        //}
+    }
+
+    // Special case - Right child: If it is the immediate right child of the root, then print without dimensions.
+    if (root->right) {
+        //if (root->right->parent == root && root == root->parent) {
+            if (root->left->type == 'B') {
+                fprintf(fp, "%d\n", root->right->label);
+            } else {
+                fprintf(fp, "%c\n", root->right->type);
+            }
+        //}
+    }
+
+    // Pre-order traversal: process the current node before the children
+    //if (root->parent) { // Nodes with parent represent re-rooted cases
+        if (root->type == 'B') {
+            fprintf(fp, "%d(%d,%d)\n", root->label, root->width, root->height);
+        } else {
+            fprintf(fp, "%c(%d,%d)\n", root->type, root->width, root->height);
+        }
+    //}
+
     outputDimensions(root->left, fp);
     outputDimensions(root->right, fp);
+}
 
-    if (root->type == 'B') { // If type 'B', then print the label, width, and height.
-        fprintf(fp, "%d(%d,%d)\n", root->label, root->width, root->height);
-    } else { // Else, then print the type, width, and height.
-        fprintf(fp, "%c(%d,%d)\n", root->type, root->width, root->height);
+// The following are all for output 4:
+
+// Function that computes the bounding box of a tree
+void computeBoundingBox(TreeNode* root, int* width, int* height) {
+    if (!root) { // Base case: if the node is NULL, then the width and height are zero
+        *width = 0;
+        *height = 0;
+        return;
     }
+
+    int leftWidth = 0, leftHeight = 0; // Variables that store left subtree dimensions.
+    int rightWidth = 0, rightHeight = 0; // Variables that store right subtree dimensions.
+
+    // This recursively computes the bounding box for the left and right subtrees.
+    computeBoundingBox(root->left, &leftWidth, &leftHeight);
+    computeBoundingBox(root->right, &rightWidth, &rightHeight);
+
+    if (root->left || root->right) { // If the node has children (internal node)
+        *width = leftWidth + rightWidth; // The total width is the sum of both subtrees
+        if (leftHeight > rightHeight) { // Height is the max of both subtrees
+            *height = leftHeight;
+        } else {
+            *height = rightHeight;
+        }
+    } else { // If the node is a leaf node
+        *width = root->width; // The width is the stored width of the node
+        *height = root->height; // The height is the stored height of the node
+    }
+}
+
+// Function that finds the optimal re-rooted representation
+void findOptimalTree(TreeNode** rerootedTrees, int numTrees, FILE* outputFile) {
+    int minArea = 9999; // Variable that tracks the minimum bounding box area.
+    int minIndex = -1; // The index of the tree with the smallest area.
+
+    for (int i = 0; i < numTrees; i++) { // Iterate over all re-rooted trees
+        int width, height;
+        computeBoundingBox(rerootedTrees[i], &width, &height); // This computes the bounding box for each tree.
+        int area = width * height; // This calculates the area of the bounding box.
+
+        if (area < minArea) { // If this tree has a smaller area, then update the minimum values.
+            minArea = area;
+            minIndex = i;
+        }
+    }
+    
+    /*// Note: this likely will need to be changed/removed.
+    if (minIndex != -1) { // This ensures that a valid tree was found
+        // Function that performs pre-order traversal of the optimal tree, and output node labels.
+        void preorder(TreeNode* node, FILE* outputFile) {
+            if (!node) { // Base case: if the node is NULL, then stop.
+                return;
+            }
+            fprintf(outputFile, "%d ", node->label); // This was marked as "id", I assume they meant label // Prints the current node label
+            preorder(node->left, outputFile); // This traverses the left subtree.
+            preorder(node->right, outputFile); // This traverses the right subtree.
+        }
+        preorder(rerootedTrees[minIndex], outputFile); // This outputs the pre-order traversal of the optimal tree.
+    }*/
+
+    preOrderTraversal(rerootedTrees[minIndex], outputFile); // This outputs the pre-order traversal of the optimal tree.
+}
+
+int generateReRootedTrees(TreeNode *root, TreeNode *rerootedTrees[], int maxTrees) {
+    if (!root || maxTrees <= 0) { // Base case: if the tree is empty, then return 0 since no re-rooting can be done.
+        return 0;
+    }
+
+    int count = 0; // Initialize a counter to track the number of generated trees.
+    rerootedTrees[count++] = root; // Includes the original tree as one possibility. // Store the original tree as the first re-rooted version.
+
+    // This generates re-rooted trees by traversing the tree and applying reRootLeft and reRootRight. // Iterates over all nodes in the tree in order to generate re-rooted versions.
+    void traverseAndReRoot(TreeNode *node) {
+        if (!node || count >= maxTrees) { // Ensures that the maximum allowed trees has not been exceeded.
+            return;
+        }
+
+        // Generates a left-rooted tree if a left child exists
+        if (node->left && count < maxTrees) {
+            rerootedTrees[count] = reRootLeft(node);
+            if (rerootedTrees[count]) {
+                count++;
+            }
+        }
+
+        // Recursively traverse the left and right subtrees
+        traverseAndReRoot(node->left);
+        traverseAndReRoot(node->right);
+    }
+
+    traverseAndReRoot(root);
+    return count; // Returns the total number of generated trees.
 }
 
 /*
@@ -292,6 +403,16 @@ After writing, all of the files are closed to free system resources.
 The tree's memory is then freed using freeTree in order to avoid memory leaks.
 The program returns success when all of the operations are able to complete correctly.
 */
+
+void treePrint(TreeNode* root) {
+    if (root == NULL) {
+        return;
+    }
+    fprintf(stdout, "%d(%d,%d)\n", root->label, root->width, root->height); //print node
+    treePrint(root->left);
+    treePrint(root->right);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 6) { // This checks if the correct number of command-line arguments is provided
         fprintf(stderr, "Usage: %s in_file out_file1 out_file2 out_file3 out_file4\n", argv[0]);
@@ -305,6 +426,7 @@ int main(int argc, char *argv[]) {
     }
 
     TreeNode *root = reconstructTree(input); // This reconstructs the tree from the input file using post-order traversal
+    //treePrint(root);
     fclose(input); // Now, close the input file, because it is no longer needed
     if (!root) {
         return EXIT_FAILURE;
@@ -314,41 +436,46 @@ int main(int argc, char *argv[]) {
     FILE *output1 = fopen(argv[2], "w");
     FILE *output2 = fopen(argv[3], "w");
     FILE *output3 = fopen(argv[4], "w");
-    FILE *output4 = fopen(argv[5], "w"); // CURRENTLY CAUSING EXIT_FAILURE
+    FILE *output4 = fopen(argv[5], "w");
 
     // Note: this line will need to include " || !output4"
     if (!output1 || !output2 || !output3 || !output4) { // This checks if any of the output files have failed to open
         perror("Error opening output files");
         return EXIT_FAILURE; // If any output file cannot be opened, then exit with failure
     }
-
+    //postOrderTraversal(root, output1);
     // Generates and writes the first pre-order traversal with left-root ordering
     // *The issue appears to be with reRootLeft. Not preOrderTraversal.*
     TreeNode *rootLR = reRootLeft(root); // Re-rooting for left-root order
     preOrderTraversal(rootLR, output1); // Write the pre-order traversal of the tree re-rooted with a left preference to the first output file
-    freeTree(rootLR); // Free the re-rooted tree after use
+    //freeTree(rootLR); // Free the re-rooted tree after use
     
-    /*// Generate and write the second pre-order traversal with right-root ordering
+    // Generate and write the second pre-order traversal with right-root ordering
     TreeNode *rootRL = reRootRight(root); // Re-rooting for right-root order
-    // THERE IS AN ISSUE WITH PREORDER CURRENTLY TO BE FIXED
+    //// THERE IS AN ISSUE WITH PREORDER CURRENTLY TO BE FIXED
     preOrderTraversal(rootRL, output2); // Write the pre-order traversal of the tree re-rooted with a right preference to the second output file
-    freeTree(rootRL); // Free the re-rooted tree after use
-
+    //freeTree(rootRL); // Free the re-rooted tree after use
+    
     // Generate and write the third output file with rectangle dimensions
     outputDimensions(root, output3);
 
-    // Generate and write the fourth output file with optimal room arrangement
-    TreeNode *rootOpt = reRootOptimal(root); // Re-rooting for optimal arrangment
-    //preOrder(rootOpt, output4); // This writes the pre-order traversal of the optimally re-rooted tree to the fourth output file
-    freeTree(rootOpt); // This frees the re-rooted tree after use
+    // Generate and write the fourth output file with optimal room arrangement. This generates multiple re-rooted trees and finds the optimal one.
+    TreeNode *rerootedTrees[100]; // Placeholder for re-rooted trees.
+    int numTrees = generateReRootedTrees(root, rerootedTrees, 100); // Generates all possible re-rooted trees.
+    findOptimalTree(rerootedTrees, numTrees, output4); // Finds and writes the optimal re-rooted tree.
+    
+    // This is to free the allocated re-rooted trees.
+    for (int i = 0; i < numTrees; i++) {
+        freeTree(rerootedTrees[i]);
+    }
 
     // This closes all of the output files, in order to free resources
     fclose(output1);
     fclose(output2);
     fclose(output3);
-    //fclose(output4);
+    fclose(output4);
 
-    freeTree(root); // This frees the memory allocated for the tree, in order to prevent memory leaks*/
+    //freeTree(root); // This frees the memory allocated for the tree, in order to prevent memory leaks
 
     return EXIT_SUCCESS; // This indicates that execution was successful.*/
 }
