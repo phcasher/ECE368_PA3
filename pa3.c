@@ -287,7 +287,7 @@ void writePreOrder(TreeNode* root, FILE* fp) {
 }*/
 
 // Updated followAlternatingPath
-void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
     if (!root || root->type == 'B') {
         writePreOrder(root, fp);
         return;
@@ -363,6 +363,424 @@ void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
     computeDimensions(currentSubtree);
     writePreOrder(currentSubtree, fp);
     freeTree(currentSubtree);
+}*/
+
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+        toggle++;
+        curr = next;
+    }
+
+    if (top == 0) {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Debug: print stack contents
+    printf("[DEBUG] Stack contains %d edges\n", top);
+    for (int i = 0; i < top; i++) {
+        printf("[STACK %d] parent: %c, child: %s, dir: %c\n", i,
+               stack[i].parent->type,
+               (stack[i].child->type == 'B') ? "BLOCK" :
+               (stack[i].child->type == 'H' ? "H" : "V"),
+               stack[i].direction);
+    }
+
+    // 3. Initialize reroot at the last edge
+    Edge last = stack[--top];
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label %d, dir %c\n",
+           last.parent->type, last.child->label, last.direction);
+
+    TreeNode* currentSubtree = NULL;
+    rerootAtEdge(last.parent, last.child, &currentSubtree, last.direction);
+
+    // 4. Reroot up the stack
+    while (top > 0) {
+        Edge e = stack[--top];
+        printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+        rerootAtEdge(e.parent, currentSubtree, &currentSubtree, e.direction);
+    }
+
+    // 5. Compute and write output
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
+}*/
+
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+        toggle++;
+        curr = next;
+    }
+
+    if (top == 0) {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Debug: print stack contents
+    printf("[DEBUG] Stack contains %d edges\n", top);
+    for (int i = 0; i < top; i++) {
+        printf("[STACK %d] parent: %c, child: %s, dir: %c\n", i,
+               stack[i].parent->type,
+               (stack[i].child->type == 'B') ? "BLOCK" :
+               (stack[i].child->type == 'H' ? "H" : "V"),
+               stack[i].direction);
+    }
+
+    // 3. Initial rerooting at the deepest edge using rerootAtEdge
+    Edge last = stack[--top];
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label %d, dir %c\n",
+           last.parent->type, last.child->label, last.direction);
+
+    TreeNode* currentSubtree = NULL;
+    rerootAtEdge(last.parent, last.child, &currentSubtree, last.direction);
+
+    // 4. Rebuild tree upward from the stack
+    while (top > 0) {
+        Edge e = stack[--top];
+        printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+
+        TreeNode* newInternal = createNode(e.parent->type, -1, 0, 0);
+        TreeNode* sibling = NULL;
+
+        if (e.direction == 'L') {
+            // We came from the left — sibling is on the right
+            sibling = cloneTree(e.parent->right);
+            newInternal->left = currentSubtree;
+            newInternal->right = sibling;
+        } else {
+            // We came from the right — sibling is on the left
+            sibling = cloneTree(e.parent->left);
+            newInternal->left = sibling;
+            newInternal->right = currentSubtree;
+        }
+
+        currentSubtree = newInternal;
+    }
+
+    // 5. Compute dimensions and write output
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
+}*/
+
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+        toggle++;
+        curr = next;
+    }
+
+    if (top == 0) {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Debug: print stack contents
+    printf("[DEBUG] Stack contains %d edges\n", top);
+    for (int i = 0; i < top; i++) {
+        printf("[STACK %d] parent: %c, child: %s, dir: %c\n", i,
+               stack[i].parent->type,
+               (stack[i].child->type == 'B') ? "BLOCK" :
+               (stack[i].child->type == 'H' ? "H" : "V"),
+               stack[i].direction);
+    }
+
+    // 3. Initialize reroot at the last edge (leaf edge)
+    Edge last = stack[--top];
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label %d, dir %c\n",
+           last.parent->type, last.child->label, last.direction);
+
+    TreeNode* currentSubtree = NULL;
+    rerootAtEdge(last.parent, last.child, &currentSubtree, last.direction);
+
+    // // 4. Reroot upward by building new internal nodes manually
+    // while (top > 0) {
+    //     Edge e = stack[--top];
+    //     printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+
+    //     TreeNode* sibling = (e.direction == 'L') ? cloneTree(e.parent->right)
+    //                                              : cloneTree(e.parent->left);
+
+    //     TreeNode* newInternal = createNode(e.parent->type, -1, 0, 0);
+
+    //     if (e.direction == 'L') {
+    //         newInternal->left = currentSubtree;
+    //         newInternal->right = sibling;
+    //     } else {
+    //         newInternal->left = sibling;
+    //         newInternal->right = currentSubtree;
+    //     }
+
+    //     printf("[DEBUG] New internal node created of type %c with left = %s, right = %s\n",
+    //            e.parent->type,
+    //            (newInternal->left->type == 'B') ? "BLOCK" :
+    //            (newInternal->left->type == 'H' ? "H" : "V"),
+    //            (newInternal->right->type == 'B') ? "BLOCK" :
+    //            (newInternal->right->type == 'H' ? "H" : "V"));
+
+    //     currentSubtree = newInternal;
+    // }
+
+   // REPLACE ONLY THE REROOTING LOOP in your existing followAlternatingPath function:
+   // 4. Reroot up the stack
+   while (top > 0) {
+        Edge e = stack[--top];
+        printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+
+        TreeNode* parentClone = cloneTree(e.parent);
+        TreeNode* sibling = (e.direction == 'L') ? cloneTree(e.parent->right)
+                                                : cloneTree(e.parent->left);
+
+        TreeNode* newInternal = createNode(parentClone->type, -1, 0, 0);
+
+        if (e.direction == 'L') {
+            newInternal->left = currentSubtree;
+            newInternal->right = sibling;
+        } else {
+            newInternal->left = sibling;
+            newInternal->right = currentSubtree;
+        }
+
+        currentSubtree = newInternal;
+    }
+
+    // 5. Compute and write output
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
+}*/
+
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+        toggle++;
+        curr = next;
+    }
+
+    if (top == 0) {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Debug: print stack contents
+    printf("[DEBUG] Stack contains %d edges\n", top);
+    for (int i = 0; i < top; i++) {
+        printf("[STACK %d] parent: %c, child: %s, dir: %c\n", i,
+               stack[i].parent->type,
+               (stack[i].child->type == 'B') ? "BLOCK" :
+               (stack[i].child->type == 'H' ? "H" : "V"),
+               stack[i].direction);
+    }
+
+    // 3. Initial reroot at last edge
+    Edge last = stack[--top];
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label %d, dir %c\n",
+           last.parent->type, last.child->label, last.direction);
+
+    TreeNode* currentSubtree = NULL;
+    rerootAtEdge(last.parent, last.child, &currentSubtree, last.direction);
+
+    // 4. Reroot up the stack
+    while (top > 0) {
+        Edge e = stack[--top];
+        printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+
+        TreeNode* parentClone = cloneTree(e.parent);
+        TreeNode* sibling = (e.direction == 'L') ? cloneTree(e.parent->right)
+                                                 : cloneTree(e.parent->left);
+
+        TreeNode* newInternal = createNode(e.parent->type, -1, 0, 0);
+
+        // FIX: attach current subtree to the SAME SIDE as it was on before
+        // and the sibling to the opposite side
+        if (e.direction == 'L') {
+            newInternal->left = currentSubtree;
+            newInternal->right = sibling;
+        } else {
+            newInternal->left = sibling;
+            newInternal->right = currentSubtree;
+        }
+
+        currentSubtree = newInternal;
+    }
+
+    // 5. Compute and write
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
+}*/
+
+void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        printf("[DEBUG] Root is NULL or a block. Writing pre-order and returning.\n");
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    printf("[DEBUG] Starting traversal of alternating path (leftFirst = %d)...\n", leftFirst);
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+
+        printf("[DEBUG] Step %d: Pushed edge: parent type = %c, child type = %c, direction = %c\n",
+               top - 1, curr->type, (next ? next->type : 'X'), dir);
+
+        if (next->type == 'B') break;
+
+        toggle++;
+        curr = next;
+    }
+
+    // while (curr) {
+    //     if (curr->type == 'B') break;
+    
+    //     TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+    //     char dir = (toggle % 2 == 0) ? 'L' : 'R';
+    
+    //     // Add edge even if next is a leaf
+    //     if (next == NULL) {
+    //         printf("[ERROR] Attempted to push edge to NULL child! Parent type: %c, toggle %d\n", curr->type, toggle);
+    //     }
+    //     stack[top++] = (Edge){curr, next, dir};
+    //     printf("[DEBUG] Step %d: Pushed edge: parent type = %c, child type = %s, direction = %c\n",
+    //            toggle, curr->type,
+    //            (next ? (next->type == 'B' ? "BLOCK" : (next->type == 'H' ? "H" : "V")) : NULL),
+    //            dir);
+    
+    //     toggle++;
+    //     curr = next;
+    // }
+
+    if (top == 0) {
+        printf("[DEBUG] Tree too shallow to reroot. Writing original tree.\n");
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Print stack summary
+    printf("[DEBUG] Stack captured %d edges:\n", top);
+    for (int i = 0; i < top; i++) {
+        printf("[STACK %d] Parent: %c, Child: %s, Dir: %c\n", i,
+               stack[i].parent->type,
+               (stack[i].child->type == 'B') ? "BLOCK" :
+               (stack[i].child->type == 'H' ? "H" : "V"),
+               stack[i].direction);
+    }
+
+    // 3. Initial reroot
+    Edge last = stack[--top];
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label/type %d/%c, dir %c\n",
+           last.parent->type, last.child->label, last.child->type, last.direction);
+
+    TreeNode* currentSubtree = NULL;
+    rerootAtEdge(last.parent, last.child, &currentSubtree, last.direction);
+    printf("[DEBUG] Subtree after initial reroot constructed.\n");
+
+    // 4. Iteratively reroot upward through stack
+    while (top > 0) {
+        Edge e = stack[--top];
+        printf("\n[DEBUG] Rerooting UP at edge: parent type %c, direction %c\n",
+               e.parent->type, e.direction);
+
+        TreeNode* parentClone = cloneTree(e.parent);
+        TreeNode* sibling = (e.direction == 'L') ? cloneTree(e.parent->right)
+                                                 : cloneTree(e.parent->left);
+        printf("[DEBUG] Cloned parent and sibling. Parent type = %c, Sibling type = %c\n",
+               parentClone->type, sibling ? sibling->type : 'X');
+
+        TreeNode* newInternal = createNode(e.parent->type, -1, 0, 0);
+
+        // ATTACH with debug
+        if (e.direction == 'L') {
+            // newInternal->left = sibling;
+            // newInternal->right = currentSubtree;
+
+            newInternal->left = currentSubtree;
+            newInternal->right = sibling;
+            printf("[DEBUG] Attached currentSubtree to LEFT, sibling to RIGHT\n");
+        } else {
+            // newInternal->left = currentSubtree;
+            // newInternal->right = sibling;
+
+            newInternal->left = sibling;
+            newInternal->right = currentSubtree;
+            printf("[DEBUG] Attached sibling to LEFT, currentSubtree to RIGHT\n");
+        }
+
+        currentSubtree = newInternal;
+        printf("[DEBUG] New currentSubtree root is type %c\n", currentSubtree->type);
+    }
+
+    // 5. Final output
+    printf("[DEBUG] Finished rerooting. Computing dimensions and writing output...\n");
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
+    printf("[DEBUG] Done with followAlternatingPath.\n");
 }
 
 // Function to deep copy a tree
