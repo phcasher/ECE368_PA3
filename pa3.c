@@ -26,12 +26,19 @@ typedef struct TreeNode {
     struct TreeNode *left, *right;
 } TreeNode;
 
+typedef struct Edge {
+    TreeNode* parent;
+    TreeNode* child;
+    char direction; // 'L' or 'R'
+} Edge;
+
 // Function prototypes
 TreeNode* createNode(char type, int label, int width, int height);
 TreeNode* buildFromLines(char* lines[], int* idx);
 TreeNode* buildTree(FILE* fp);
 void computeDimensions(TreeNode* root);
 void writePreOrder(TreeNode* root, FILE* fp);
+//TreeNode* rerootAlongPath(TreeNode* curr, int toggle, TreeNode ** leafTarget, char* lastDirection);
 void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst);
 TreeNode* cloneTree(TreeNode* root);
 void rerootAtEdge(TreeNode* parent, TreeNode* child, TreeNode** newRoot, char direction);
@@ -114,7 +121,7 @@ void writePreOrder(TreeNode* root, FILE* fp) {
 }
 
 // Alternating path: left-right for out_file1, right-left for out_file2
-void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
     TreeNode *parent = NULL, *child = root;
     TreeNode *lastParent = NULL, *lastChild = NULL;
     char lastDirection = ' ';
@@ -122,31 +129,240 @@ void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
 
     while (child && child->type != 'B') {
         parent = child;
+
         if (toggle % 2 == 0) {
-            child = child->left;
+            printf("Moving left\n");
+            child = parent->left;
             lastDirection = 'L';
         } else {
-            child = child->right;
+            printf("Moving right\n");
+            child = parent->right;
             lastDirection = 'R';
         }
-        toggle++;
 
-        //if (child && child->type == 'B') break; // stop before leaf
+        if (child) {
+            printf("Child!\n");
+            lastParent = parent;
+            lastChild = child;
+        }
+
+        printf("Toggle!\n");
+        toggle++;
     }
 
+    // if (child && child->type == 'B') {
+    //     printf("%d\n", child->label);
+    // } else if (child) {
+    //     printf("%c\n", child->type);
+    // }
+
     if (lastParent && lastChild) { // removed "&& grand"
+        printf("lastParent && lastChild\n");
+        printf("[DEBUG] Last edge before leaf: parent=%c, child=%s, direction=%c\n", lastParent->type, lastChild->type == 'B' ? "BLOCK" : (lastChild->type == 'H' ? "H" : "V"), lastDirection);
+
         TreeNode* newRoot = NULL;
-        rerootAtEdge(parent, child, &newRoot, lastDirection);
+        rerootAtEdge(lastParent, lastChild, &newRoot, lastDirection);
         computeDimensions(newRoot);
         writePreOrder(newRoot, fp);
         freeTree(newRoot);
     } else {
+        printf("Else!");
         // Not enough depth to reroot, output original
+        printf("[DEBUG] No valid rerooting edge found. Outputting original tree.\n");
         computeDimensions(root);
         writePreOrder(root, fp);
     }
+}*/
 
-    //if (curr) fprintf(fp, "%d(%d,%d)\n", curr->label, curr->width, curr->height);
+// New recursive rerooting helper
+// TreeNode* rerootAlongPath(TreeNode* curr, int toggle, TreeNode ** leafTarget, char* lastDirection) {
+//     if (!curr) return NULL;
+
+//     if (curr->type == 'B') {
+//         *leafTarget = createNode('B', curr->label, curr->width, curr->height); // Save leaf for final reroot
+//         return *leafTarget;
+//     }
+
+//     TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+//     TreeNode* sibling = (toggle % 2 == 0) ? curr->right : curr->left;
+
+//     TreeNode* childSubtree = rerootAlongPath(next, toggle + 1, leafTarget, lastDirection);
+
+//     if (!childSubtree) return NULL;
+
+//     TreeNode* clone = createNode(curr->type, -1, 0, 0);
+
+//     if (toggle % 2 == 0) {
+//         clone->right = childSubtree;
+//         clone->left = cloneTree(sibling);
+//         *lastDirection = 'L';
+//     } else {
+//         clone->left = childSubtree;
+//         clone->right = cloneTree(sibling);
+//         *lastDirection = 'R';
+//     }
+
+//     return clone;
+//     // return NULL;
+// }
+
+// void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+//     TreeNode* leaf = NULL;
+//     char lastDir = ' ';
+//     TreeNode* rerootedPath = rerootAlongPath(root, leftFirst, &leaf, &lastDir);
+
+//     if (!rerootedPath || !leaf) {
+//         computeDimensions(root);
+//         writePreOrder(root, fp);
+//         return;
+//     }
+
+//     // Attach leaf as the correct child of rerootedPath
+//     TreeNode* clonedLeaf = cloneTree(leaf);
+//     if (lastDir == 'L') {
+//         rerootedPath->left = clonedLeaf;
+//     } else {
+//         rerootedPath->right = clonedLeaf;
+//     }
+
+//     computeDimensions(rerootedPath);
+//     writePreOrder(rerootedPath, fp);
+//     freeTree(rerootedPath);
+// }
+
+/*void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root) return;
+
+    printf("[INFO] Starting followAlternatingPath, leftFirst = %d\n", leftFirst);
+
+    TreeNode *curr = root;
+    TreeNode *parent = NULL;
+    TreeNode *lastParent = NULL;
+    TreeNode *lastChild = NULL;
+    char lastDir = ' ';
+    int toggle = leftFirst;
+    int depth = 0;
+
+    // Follow alternating path
+    while (curr && curr->type != 'B') {
+        parent = curr;
+        printf("[INFO] Level %d: At node %c\n", depth, curr->type);
+
+        if (toggle % 2 == 0) {
+            curr = curr->left;
+            lastDir = 'L';
+            printf("[INFO] Going LEFT to node %c\n", curr ? curr->type : '?');
+        } else {
+            curr = curr->right;
+            lastDir = 'R';
+            printf("[INFO] Going RIGHT to node %c\n", curr ? curr->type : '?');
+        }
+
+        lastParent = parent;
+        lastChild = curr;
+        toggle++;
+        depth++;
+
+        // Stop traversal when next node is a leaf
+        if (curr && curr->type == 'B') {
+            printf("[INFO] Reached leaf node: %d\n", curr->label);
+            break;
+        }
+    }
+
+    if (lastParent && lastChild) {
+        printf("[INFO] Rerooting at edge: parent type=%c, child label=%d, direction=%c\n",
+               lastParent->type, lastChild->label, lastDir);
+
+        TreeNode* newRoot = NULL;
+        rerootAtEdge(lastParent, lastChild, &newRoot, lastDir);
+        computeDimensions(newRoot);
+        writePreOrder(newRoot, fp);
+        freeTree(newRoot);
+    } else {
+        printf("[INFO] No reroot performed, writing original tree\n");
+        computeDimensions(root);
+        writePreOrder(root, fp);
+    }
+}*/
+
+// Updated followAlternatingPath
+void followAlternatingPath(TreeNode* root, FILE* fp, int leftFirst) {
+    if (!root || root->type == 'B') {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 1. Traverse alternating path and store edges
+    Edge stack[1024];
+    int top = 0;
+    TreeNode* curr = root;
+    int toggle = leftFirst;
+
+    while (curr && curr->type != 'B') {
+        TreeNode* next = (toggle % 2 == 0) ? curr->left : curr->right;
+        char dir = (toggle % 2 == 0) ? 'L' : 'R';
+        stack[top++] = (Edge){curr, next, dir};
+        toggle++;
+        curr = next;
+    }
+
+    if (top == 0) {
+        writePreOrder(root, fp);
+        return;
+    }
+
+    // 2. Reroot at the last edge
+    Edge last = stack[--top];
+    TreeNode* newRoot = cloneTree(last.child);
+    TreeNode* parentClone = cloneTree(last.parent);
+
+    printf("[DEBUG] Initial reroot at edge: parent type %c, child label %d, dir %c\n",
+           last.parent->type, last.child->label, last.direction);
+
+    if (last.direction == 'L') {
+        parentClone->left = NULL;
+        newRoot->right = parentClone;
+    } else {
+        parentClone->right = NULL;
+        newRoot->left = parentClone;
+    }
+
+    TreeNode* currentSubtree = newRoot;
+
+    // 3. Rebuild tree upward
+    printf("[DEBUG] Stack contains %d edges\n", top + 1);
+    for (int i = 0; i <= top; i++) {
+        printf("[STACK %d] parent: %c, child: %s, dir: %c\n", i,
+            stack[i].parent->type,
+            (stack[i].child->type == 'B') ? "BLOCK" : (stack[i].child->type == 'H' ? "H" : "V"),
+            stack[i].direction);
+    }
+
+    while (top > 0) {
+        Edge e = stack[--top];
+        TreeNode* parent = cloneTree(e.parent);
+        TreeNode* sibling = (e.direction == 'L') ? cloneTree(e.parent->right)
+                                                 : cloneTree(e.parent->left);
+
+        TreeNode* newInternal = createNode(e.parent->type, -1, 0, 0);
+
+        if (e.direction == 'L') {
+            newInternal->left = currentSubtree;
+            newInternal->right = sibling;
+        } else {
+            newInternal->left = sibling;
+            newInternal->right = currentSubtree;
+        }
+
+        printf("[DEBUG] Rerooting up: parent type %c, dir %c\n", e.parent->type, e.direction);
+        currentSubtree = newInternal;
+    }
+
+    // 4. Compute and write output
+    computeDimensions(currentSubtree);
+    writePreOrder(currentSubtree, fp);
+    freeTree(currentSubtree);
 }
 
 // Function to deep copy a tree
@@ -159,24 +375,51 @@ TreeNode* cloneTree(TreeNode* root) {
 }
  
 // Function to simulate rerooting at a specific edge
+// *OLD* void rerootAtEdge(TreeNode* parent, TreeNode* child, TreeNode** newRoot, char direction) {
+//     // if (!parent || !child) return;
+ 
+//     TreeNode* pClone = cloneTree(parent);
+//     TreeNode* cClone = cloneTree(child);
+ 
+//     if (direction == 'L') {
+//         pClone->left = NULL;
+//         //cClone->left = cloneTree(child->left); // preserve original left
+//         cClone->right = pClone;
+//     } else {
+//         pClone->right = NULL;
+//         //cClone->right = cloneTree(child->right); // preserve original right
+//         cClone->left = pClone;
+//     }
+
+//     *newRoot = cClone;
+// }
+
+// Function to simulate rerooting at a specific edge
 void rerootAtEdge(TreeNode* parent, TreeNode* child, TreeNode** newRoot, char direction) {
-    // if (!parent || !child) return;
+    printf("[DEBUG] Entering rerootAtEdge. Parent type: %c, Child label/type: %c/%d, Direction: %c\n",
+           parent->type, child->type, child->label, direction);
  
     TreeNode* pClone = cloneTree(parent);
     TreeNode* cClone = cloneTree(child);
  
+    printf("[DEBUG] Cloned parent and child. Parent clone type: %c, Child clone label/type: %c/%d\n",
+           pClone->type, cClone->type, cClone->label);
+ 
     if (direction == 'L') {
+        printf("[DEBUG] Direction is L. Disconnecting parent->left.\n");
         pClone->left = NULL;
-        //cClone->left = cloneTree(child->left); // preserve original left
         cClone->right = pClone;
+        printf("[DEBUG] Attached parent clone to cClone->right.\n");
     } else {
+        printf("[DEBUG] Direction is R. Disconnecting parent->right.\n");
         pClone->right = NULL;
-        //cClone->right = cloneTree(child->right); // preserve original right
         cClone->left = pClone;
+        printf("[DEBUG] Attached parent clone to cClone->left.\n");
     }
-
+ 
     *newRoot = cClone;
-}
+    printf("[DEBUG] New root set. Type: %c, Label: %d\n", cClone->type, cClone->label);
+ }
  
 // Function to explore and simulate rerooting at each valid edge
 void simulate(TreeNode* root, TreeNode* parent, FILE* fp, int* minArea, int* bestIndex, int* index, TreeNode** bestTree, char dir) {
